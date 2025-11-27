@@ -100,32 +100,147 @@
                 <details>
                     <summary>Episode {{ stat.episode }} · {{ stat.turns }} turns · {{ stat.trace|length }} actions</summary>
                     {% if stat.trace %}
+                        {% set ns = namespace(shortcuts=0, constructions=0, power_ups=0, captures=0, illegal=0, no_legal_play=0) %}
+                        {% for step in stat.trace %}
+                            {% if step.action_key[0] == 'invalid' %}
+                                {% set ns.illegal = ns.illegal + 1 %}
+                            {% elif step.action_key[0] == 'pass' %}
+                                {% set ns.no_legal_play = ns.no_legal_play + 1 %}
+                            {% else %}
+                                {% for event in step.special_square_events %}
+                                    {% if event.square_type == 'shortcut' %}
+                                        {% set ns.shortcuts = ns.shortcuts + 1 %}
+                                    {% elif event.square_type == 'construction' %}
+                                        {% set ns.constructions = ns.constructions + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if step.bonus_primary > 0 %}
+                                    {% set ns.power_ups = ns.power_ups + 1 %}
+                                {% endif %}
+                                {% if step.secondary is not none and step.bonus_secondary > 0 %}
+                                    {% set ns.power_ups = ns.power_ups + 1 %}
+                                {% endif %}
+                                {% set ns.captures = ns.captures + step.captures|length %}
+                            {% endif %}
+                        {% endfor %}
+                        <div style="background: #f9fbff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0;">
+                            <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: #122851;">Episode Summary</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">
+                                <div style="padding: 0.75rem; background: white; border-radius: 0.4rem; border-left: 3px solid #2ecc71;">
+                                    <div style="font-size: 0.85rem; color: #4c607a; margin-bottom: 0.25rem;">Shortcuts</div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: #2ecc71;">{{ ns.shortcuts }}</div>
+                                </div>
+                                <div style="padding: 0.75rem; background: white; border-radius: 0.4rem; border-left: 3px solid #e74c3c;">
+                                    <div style="font-size: 0.85rem; color: #4c607a; margin-bottom: 0.25rem;">Construction Zones</div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: #e74c3c;">{{ ns.constructions }}</div>
+                                </div>
+                                <div style="padding: 0.75rem; background: white; border-radius: 0.4rem; border-left: 3px solid #f39c12;">
+                                    <div style="font-size: 0.85rem; color: #4c607a; margin-bottom: 0.25rem;">Power Ups</div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: #f39c12;">{{ ns.power_ups }}</div>
+                                </div>
+                                <div style="padding: 0.75rem; background: white; border-radius: 0.4rem; border-left: 3px solid #3498db;">
+                                    <div style="font-size: 0.85rem; color: #4c607a; margin-bottom: 0.25rem;">Captures</div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">{{ ns.captures }}</div>
+                                </div>
+                                <div style="padding: 0.75rem; background: white; border-radius: 0.4rem; border-left: 3px solid #95a5a6;">
+                                    <div style="font-size: 0.85rem; color: #4c607a; margin-bottom: 0.25rem;">Illegal Actions</div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: #95a5a6;">{{ ns.illegal }}</div>
+                                </div>
+                                <div style="padding: 0.75rem; background: white; border-radius: 0.4rem; border-left: 3px solid #94a3b8;">
+                                    <div style="font-size: 0.85rem; color: #4c607a; margin-bottom: 0.25rem;">No Legal Play</div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: #94a3b8;">{{ ns.no_legal_play }}</div>
+                                </div>
+                            </div>
+                        </div>
                         <ol>
                             {% for step in stat.trace %}
-                                <li>
+                                {% if step.action_key[0] == 'invalid' %}
+                                    {# Skip invalid actions - they are shown in summary only #}
+                                {% elif step.action_key[0] == 'pass' %}
+                                    <li style="margin-bottom: 0.5rem; padding: 0.5rem; text-align: center;">
+                                        <span class="player-badge player-{{ step.player }}">Player {{ step.player + 1 }}</span>
+                                        <span style="font-size: 1.5rem; color: #94a3b8; margin: 0 0.5rem;">✗</span>
+                                        <span style="color: #94a3b8; font-style: italic;">no legal play</span>
+                                    </li>
+                                {% else %}
+                                    <li style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
                                     <div class="action-headline">
-                                        Player {{ step.player + 1 }} rolled {{ step.roll }} →
+                                            <span class="player-badge player-{{ step.player }}">Player {{ step.player + 1 }}</span>
+                                            rolled <strong>{{ step.roll }}</strong> →
                                         {% if step.action_key[0] == 'split' %}
-                                            split move between pawns {{ step.primary }} ({{ step.primary_steps }} steps) and {{ step.secondary }} ({{ step.secondary_steps }} steps)
+                                                <span class="pawn-info">Pawn {{ step.primary }}</span> ({{ step.primary_steps }} steps) and <span class="pawn-info">Pawn {{ step.secondary }}</span> ({{ step.secondary_steps }} steps)
                                         {% elif step.action_key[0] == 'entry' %}
-                                            launched pawn {{ step.primary }} out of base
-                                        {% elif step.action_key[0] == 'pass' %}
-                                            no legal move
+                                                launched <span class="pawn-info">Pawn {{ step.primary }}</span> out of base
                                         {% else %}
-                                            moved pawn {{ step.primary }} by {{ step.primary_steps }} steps
+                                                moved <span class="pawn-info">Pawn {{ step.primary }}</span> by {{ step.primary_steps }} steps
                                         {% endif %}
                                     </div>
                                     <div class="action-meta">
-                                        Power bonus: +{{ step.bonus_primary }}{% if step.secondary is not none %} / +{{ step.bonus_secondary }}{% endif %} ·
-                                        Positions: {{ step.positions_before[:-1] }} → {{ step.positions_after[:-1] }}
+                                            {% if step.bonus_primary > 0 or (step.secondary is not none and step.bonus_secondary > 0) %}
+                                                <div style="margin: 0.5rem 0;">
+                                                    <strong>Power bonus:</strong>
+                                                    {% if step.bonus_primary > 0 %}+{{ step.bonus_primary }}{% endif %}
+                                                    {% if step.secondary is not none and step.bonus_secondary > 0 %} / +{{ step.bonus_secondary }}{% endif %}
+                                                </div>
+                                            {% endif %}
+
+                                            <div class="positions-group">
+                                                <h4>Pawn Positions</h4>
+                                                <div class="player-positions">
+                                                    {% set num_players = config.num_players|default(4) %}
+                                                    {% set num_pawns = config.num_pawns|default(4) %}
+                                                    {% for player_idx in range(num_players) %}
+                                                        <div style="background: white; padding: 0.75rem; border-radius: 0.4rem; border: 1px solid #e2e8f0;">
+                                                            <div class="player-badge player-{{ player_idx }}" style="margin-bottom: 0.75rem; display: block; text-align: center;">Player {{ player_idx + 1 }}</div>
+                                                            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                                                                {% for pawn_idx in range(num_pawns) %}
+                                                                    {% set pos_idx = player_idx * num_pawns + pawn_idx %}
+                                                                    {% if pos_idx < (step.positions_before|length - 1) %}
+                                                                        <div class="pawn-position">
+                                                                            <span class="pawn-label">Pawn {{ pawn_idx }}:</span>
+                                                                            <span style="color: #4c607a;">{{ step.positions_before[pos_idx] }}</span>
+                                                                            <span style="color: #94a3b8;">→</span>
+                                                                            <span style="color: #122851; font-weight: 600;">{{ step.positions_after[pos_idx] }}</span>
+                                                                        </div>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+
                                         {% if step.captures %}
-                                            · Captured
+                                                <div style="margin: 0.5rem 0; padding: 0.5rem; background-color: #ffecec; border-radius: 0.4rem; border-left: 3px solid #e74c3c;">
+                                                    <strong>⚔️ Captured:</strong>
                                             {% for capture in step.captures %}
-                                                player {{ capture.player + 1 }} pawn {{ capture.pawn }}{% if not loop.last %},{% endif %}
+                                                        <span class="player-badge player-{{ capture.player }}">Player {{ capture.player + 1 }}</span>
+                                                        <span class="pawn-info">Pawn {{ capture.pawn }}</span>{% if not loop.last %},{% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+
+                                            {% if step.special_square_events %}
+                                                <div style="margin: 0.5rem 0;">
+                                                    {% for event in step.special_square_events %}
+                                                        <div style="padding: 0.5rem; margin: 0.25rem 0; background-color: {% if event.square_type == 'shortcut' %}#e8f8f5{% else %}#fdeaea{% endif %}; border-radius: 0.4rem; border-left: 3px solid {% if event.square_type == 'shortcut' %}#2ecc71{% else %}#e74c3c{% endif %};">
+                                                            <span style="color: {% if event.square_type == 'shortcut' %}#2ecc71{% else %}#e74c3c{% endif %}; font-weight: bold;">
+                                                                ⚡ <span class="player-badge player-{{ event.player }}">Player {{ event.player + 1 }}</span>
+                                                                <span class="pawn-info">Pawn {{ event.pawn }}</span>
+                                                                landed on <strong>{{ event.square_type }}</strong> square {{ event.square }}:
+                                                                {% if event.square_type == 'shortcut' %}
+                                                                    moved forward {{ event.steps }} steps ({{ event.from_position }} → {{ event.to_position }})
+                                                                {% else %}
+                                                                    moved backward {{ -event.steps }} steps ({{ event.from_position }} → {{ event.to_position }})
+                                                                {% endif %}
+                                                            </span>
+                                                        </div>
                                             {% endfor %}
+                                                </div>
                                         {% endif %}
                                     </div>
                                 </li>
+                                {% endif %}
                             {% endfor %}
                         </ol>
                     {% else %}

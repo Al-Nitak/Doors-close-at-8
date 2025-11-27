@@ -20,7 +20,7 @@
         <section>
             <h2>Board Setup</h2>
             <label>Board size
-                <input type="number" name="board_size" min="10" value="{{ config.board_size }}" required>
+                <input max="32" type="number" name="board_size" min="10" value="{{ config.board_size }}" required>
             </label>
             <label>Number of players
                 <input type="number" name="num_players" min="1" max="4" value="{{ config.num_players }}" required>

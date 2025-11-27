@@ -9,14 +9,14 @@ from rl.simulation import run_simulation
 app = Flask(__name__)
 
 DEFAULT_CONFIG: Dict = {
-    "board_size": 52,
+    "board_size": 32,
     "num_players": 4,
     "num_pawns": 4,
     "dice_sides": 6,
     "power_squares": [5, 12, 18, 24],
     "power_bonus": 1,
-    "shortcut_squares": {},
-    "construction_zones": {},
+    "shortcut_squares": {5:+2, 15:+3, 25:+4},
+    "construction_zones": {4:2, 14:+3, 23:+4},
     "episodes": 200,
     "evaluation_runs": 30,
     "alpha": 0.1,

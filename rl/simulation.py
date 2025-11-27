@@ -5,7 +5,8 @@ from statistics import mean
 from typing import Dict, List
 
 from .agent import QLearningAgent
-from .environment import LudoEnvironment, StepInfo
+from .environment import LudoEnvironment
+from .types import StepInfo
 
 
 @dataclass
@@ -47,7 +48,7 @@ class SimulationResult:
 
 def run_simulation(config: Dict) -> SimulationResult:
     env = LudoEnvironment(
-        board_size=config.get("board_size", 52),
+        board_size=config.get("board_size", 32),
         num_players=config.get("num_players", 4),
         num_pawns=config.get("num_pawns", 4),
         dice_sides=config.get("dice_sides", 6),
