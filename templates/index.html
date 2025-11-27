@@ -82,8 +82,49 @@
             </label>
         </section>
 
-        <button type="submit">Run Simulation</button>
+        <button type="submit" id="submit-btn">Run Simulation</button>
     </form>
 </main>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-content">
+        <div class="rl-animation">
+            <div class="neural-network">
+                <div class="node node-1"></div>
+                <div class="node node-2"></div>
+                <div class="node node-3"></div>
+                <div class="node node-4"></div>
+                <div class="node node-5"></div>
+                <div class="node node-6"></div>
+                <div class="connection conn-1"></div>
+                <div class="connection conn-2"></div>
+                <div class="connection conn-3"></div>
+                <div class="connection conn-4"></div>
+                <div class="connection conn-5"></div>
+                <div class="connection conn-6"></div>
+            </div>
+            <div class="agent-path">
+                <div class="path-dot dot-1"></div>
+                <div class="path-dot dot-2"></div>
+                <div class="path-dot dot-3"></div>
+                <div class="path-dot dot-4"></div>
+                <div class="path-dot dot-5"></div>
+            </div>
+        </div>
+        <h2>Training Agent...</h2>
+        <p class="loading-text">Running Q-Learning simulation</p>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelector('.config-form').addEventListener('submit', function(e) {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        document.getElementById('submit-btn').disabled = true;
+    });
+</script>
 </body>
 </html>
