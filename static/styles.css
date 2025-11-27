@@ -1,0 +1,132 @@
+:root {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #0b1728;
+    background-color: #f0f2f8;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #f4f7fb;
+}
+
+header {
+    background: #122851;
+    color: #fff;
+    padding: 2rem;
+}
+
+header a {
+    color: #fff;
+    text-decoration: none;
+}
+
+main {
+    padding: 2rem;
+}
+
+.config-form {
+    display: grid;
+    gap: 1.5rem;
+}
+
+section {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 5px 20px rgba(18, 40, 81, 0.1);
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.75rem;
+}
+
+.config-form input[type="number"],
+.config-form input[type="text"] {
+    padding: 0.6rem;
+    border-radius: 0.4rem;
+    border: 1px solid #ccd5e1;
+    margin-top: 0.25rem;
+}
+
+.checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox input {
+    width: auto;
+    margin: 0;
+    padding: 0;
+}
+
+button {
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 0.75rem;
+    background: #ff7a18;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+.error {
+    background: #ffecec;
+    border: 1px solid #ff5a5f;
+    color: #7a0010;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.metric-grid div {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid #dde4ef;
+}
+
+strong {
+    font-size: 1.6rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th, td {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background: #f9fbff;
+}
+
+@media (min-width: 900px) {
+    .config-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    button {
+        justify-self: start;
+    }
+}

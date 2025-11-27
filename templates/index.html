@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Ludo RL Lab</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header>
+    <h1>Ludo Reinforcement Learning Lab</h1>
+    <p>Experiment with dice sizes, power squares, and training hyper-parameters to discover fast-to-finish rule sets.</p>
+</header>
+
+<main>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form action="/simulate" method="post" class="config-form">
+        <section>
+            <h2>Board Setup</h2>
+            <label>Board size
+                <input type="number" name="board_size" min="10" value="{{ config.board_size }}" required>
+            </label>
+            <label>Number of pawns
+                <input type="number" name="num_pawns" min="1" value="{{ config.num_pawns }}" required>
+            </label>
+            <label>Dice sides
+                <input type="number" name="dice_sides" min="2" value="{{ config.dice_sides }}" required>
+            </label>
+            <label>Power squares (comma separated)
+                <input type="text" name="power_squares" value="{{ config.power_squares | join(', ') }}">
+            </label>
+            <label>Power bonus
+                <input type="number" name="power_bonus" min="0" value="{{ config.power_bonus }}">
+            </label>
+            <label>Max turns per episode
+                <input type="number" name="max_turns" min="50" value="{{ config.max_turns }}">
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" name="allow_odd_split" {% if config.allow_odd_split %}checked{% endif %}>
+                Allow odd dice rolls to be split between two pawns
+            </label>
+        </section>
+
+        <section>
+            <h2>Training Hyper-parameters</h2>
+            <label>Episodes
+                <input type="number" name="episodes" min="10" value="{{ config.episodes }}" required>
+            </label>
+            <label>Evaluation runs
+                <input type="number" name="evaluation_runs" min="5" value="{{ config.evaluation_runs }}" required>
+            </label>
+            <label>Learning rate (alpha)
+                <input type="number" step="0.01" name="alpha" value="{{ config.alpha }}">
+            </label>
+            <label>Discount (gamma)
+                <input type="number" step="0.01" name="gamma" value="{{ config.gamma }}">
+            </label>
+            <label>Exploration (epsilon)
+                <input type="number" step="0.01" name="epsilon" value="{{ config.epsilon }}">
+            </label>
+            <label>Min epsilon
+                <input type="number" step="0.01" name="min_epsilon" value="{{ config.min_epsilon }}">
+            </label>
+            <label>Epsilon decay
+                <input type="number" step="0.001" name="epsilon_decay" value="{{ config.epsilon_decay }}">
+            </label>
+        </section>
+
+        <button type="submit">Run Simulation</button>
+    </form>
+</main>
+</body>
+</html>

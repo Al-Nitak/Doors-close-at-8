@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Simulation Results</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header>
+    <h1>Simulation Results</h1>
+    <a href="/">← Configure new run</a>
+</header>
+
+<main>
+    <section class="summary">
+        <h2>Configuration</h2>
+        <dl>
+            <dt>Board size</dt><dd>{{ config.board_size }}</dd>
+            <dt>Dice sides</dt><dd>{{ config.dice_sides }}</dd>
+            <dt>Power squares</dt><dd>{{ config.power_squares | join(', ') if config.power_squares else 'None' }}</dd>
+            <dt>Power bonus</dt><dd>{{ config.power_bonus }}</dd>
+            <dt>Episodes</dt><dd>{{ config.episodes }}</dd>
+            <dt>Evaluation runs</dt><dd>{{ config.evaluation_runs }}</dd>
+            <dt>Odd roll split</dt><dd>{{ 'Enabled' if config.allow_odd_split else 'Disabled' }}</dd>
+        </dl>
+    </section>
+
+    <section>
+        <h2>Key Metrics</h2>
+        <div class="metric-grid">
+            <div>
+                <p>Avg training reward</p>
+                <strong>{{ '%.2f'|format(result.avg_training_reward) }}</strong>
+            </div>
+            <div>
+                <p>Avg training turns</p>
+                <strong>{{ '%.1f'|format(result.avg_training_turns) }}</strong>
+            </div>
+            <div>
+                <p>Avg eval reward</p>
+                <strong>{{ '%.2f'|format(result.avg_eval_reward) }}</strong>
+            </div>
+            <div>
+                <p>Avg eval turns</p>
+                <strong>{{ '%.1f'|format(result.avg_eval_turns) }}</strong>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Training History (last {{ training_history|length }} episodes)</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Episode</th>
+                <th>Total Reward</th>
+                <th>Turns</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for stat in training_history %}
+                <tr>
+                    <td>{{ stat.episode }}</td>
+                    <td>{{ '%.2f'|format(stat.total_reward) }}</td>
+                    <td>{{ stat.turns }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Evaluation Runs</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Total Reward</th>
+                <th>Turns</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for stat in evaluation %}
+                <tr>
+                    <td>{{ stat.run }}</td>
+                    <td>{{ '%.2f'|format(stat.total_reward) }}</td>
+                    <td>{{ stat.turns }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>
