@@ -16,12 +16,35 @@
         <h2>Configuration</h2>
         <dl>
             <dt>Board size</dt><dd>{{ config.board_size }}</dd>
+            <dt>Players</dt><dd>{{ config.num_players }}</dd>
+            <dt>Pawns per player</dt><dd>{{ config.num_pawns }}</dd>
             <dt>Dice sides</dt><dd>{{ config.dice_sides }}</dd>
             <dt>Power squares</dt><dd>{{ config.power_squares | join(', ') if config.power_squares else 'None' }}</dd>
             <dt>Power bonus</dt><dd>{{ config.power_bonus }}</dd>
+            <dt>Shortcuts</dt>
+            <dd>
+                {% if config.shortcut_squares %}
+                    {% for square, steps in config.shortcut_squares.items() %}
+                        {{ square }}:+{{ steps }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                {% else %}
+                    None
+                {% endif %}
+            </dd>
+            <dt>Construction zones</dt>
+            <dd>
+                {% if config.construction_zones %}
+                    {% for square, steps in config.construction_zones.items() %}
+                        {{ square }}:-{{ steps }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                {% else %}
+                    None
+                {% endif %}
+            </dd>
             <dt>Episodes</dt><dd>{{ config.episodes }}</dd>
             <dt>Evaluation runs</dt><dd>{{ config.evaluation_runs }}</dd>
             <dt>Odd roll split</dt><dd>{{ 'Enabled' if config.allow_odd_split else 'Disabled' }}</dd>
+            <dt>Captures</dt><dd>{{ 'Enabled' if config.enable_capture else 'Disabled' }}</dd>
         </dl>
     </section>
 
@@ -67,6 +90,50 @@
             {% endfor %}
             </tbody>
         </table>
+    </section>
+
+    <section>
+        <h2>Episode Action Logs</h2>
+        <p>Expand an episode to inspect every die roll and move the agent chose to finish the board.</p>
+        <div class="accordion">
+            {% for stat in training_history %}
+                <details>
+                    <summary>Episode {{ stat.episode }} · {{ stat.turns }} turns · {{ stat.trace|length }} actions</summary>
+                    {% if stat.trace %}
+                        <ol>
+                            {% for step in stat.trace %}
+                                <li>
+                                    <div class="action-headline">
+                                        Player {{ step.player + 1 }} rolled {{ step.roll }} →
+                                        {% if step.action_key[0] == 'split' %}
+                                            split move between pawns {{ step.primary }} ({{ step.primary_steps }} steps) and {{ step.secondary }} ({{ step.secondary_steps }} steps)
+                                        {% elif step.action_key[0] == 'entry' %}
+                                            launched pawn {{ step.primary }} out of base
+                                        {% elif step.action_key[0] == 'pass' %}
+                                            no legal move
+                                        {% else %}
+                                            moved pawn {{ step.primary }} by {{ step.primary_steps }} steps
+                                        {% endif %}
+                                    </div>
+                                    <div class="action-meta">
+                                        Power bonus: +{{ step.bonus_primary }}{% if step.secondary is not none %} / +{{ step.bonus_secondary }}{% endif %} ·
+                                        Positions: {{ step.positions_before[:-1] }} → {{ step.positions_after[:-1] }}
+                                        {% if step.captures %}
+                                            · Captured
+                                            {% for capture in step.captures %}
+                                                player {{ capture.player + 1 }} pawn {{ capture.pawn }}{% if not loop.last %},{% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    {% else %}
+                        <p>No actions recorded.</p>
+                    {% endif %}
+                </details>
+            {% endfor %}
+        </div>
     </section>
 
     <section>

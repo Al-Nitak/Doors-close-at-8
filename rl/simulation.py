@@ -5,7 +5,7 @@ from statistics import mean
 from typing import Dict, List
 
 from .agent import QLearningAgent
-from .environment import LudoEnvironment
+from .environment import LudoEnvironment, StepInfo
 
 
 @dataclass
@@ -13,6 +13,7 @@ class EpisodeStats:
     episode: int
     total_reward: float
     turns: int
+    trace: List[StepInfo]
 
 
 @dataclass
@@ -46,14 +47,18 @@ class SimulationResult:
 
 def run_simulation(config: Dict) -> SimulationResult:
     env = LudoEnvironment(
-        board_size=config.get("board_size", 30),
+        board_size=config.get("board_size", 52),
+        num_players=config.get("num_players", 4),
         num_pawns=config.get("num_pawns", 4),
         dice_sides=config.get("dice_sides", 6),
         power_squares=config.get("power_squares", []),
         power_bonus=config.get("power_bonus", 1),
+        shortcut_squares=config.get("shortcut_squares", {}),
+        construction_zones=config.get("construction_zones", {}),
         max_turns=config.get("max_turns", 500),
         seed=config.get("seed"),
         allow_odd_split=config.get("allow_odd_split", False),
+        enable_capture=config.get("enable_capture", True),
     )
 
     agent = QLearningAgent(
@@ -72,6 +77,7 @@ def run_simulation(config: Dict) -> SimulationResult:
         done = False
         total_reward = 0.0
         turns = 0
+        episode_trace: List[StepInfo] = []
 
         while not done:
             options = env.available_actions()
@@ -81,9 +87,10 @@ def run_simulation(config: Dict) -> SimulationResult:
             chosen_key = agent.select_action(state, action_keys, env.rng)
             option_lookup = {option.key: option for option in options}
             selected_option = option_lookup[chosen_key]
-            next_state, reward, done, _ = env.step(selected_option)
+            next_state, reward, done, info = env.step(selected_option)
             total_reward += reward
             turns += 1
+            episode_trace.append(info)
 
             next_options = [] if done else env.available_actions()
             next_keys = [option.key for option in next_options]
@@ -91,7 +98,14 @@ def run_simulation(config: Dict) -> SimulationResult:
             state = next_state
 
         agent.decay_epsilon()
-        training_history.append(EpisodeStats(episode=episode, total_reward=total_reward, turns=turns))
+        training_history.append(
+            EpisodeStats(
+                episode=episode,
+                total_reward=total_reward,
+                turns=turns,
+                trace=episode_trace,
+            )
+        )
 
     evaluation_runs = config.get("evaluation_runs", 50)
     evaluation: List[EvaluationStats] = []

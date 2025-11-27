@@ -22,7 +22,10 @@
             <label>Board size
                 <input type="number" name="board_size" min="10" value="{{ config.board_size }}" required>
             </label>
-            <label>Number of pawns
+            <label>Number of players
+                <input type="number" name="num_players" min="1" max="4" value="{{ config.num_players }}" required>
+            </label>
+            <label>Pawns per player
                 <input type="number" name="num_pawns" min="1" value="{{ config.num_pawns }}" required>
             </label>
             <label>Dice sides
@@ -34,6 +37,12 @@
             <label>Power bonus
                 <input type="number" name="power_bonus" min="0" value="{{ config.power_bonus }}">
             </label>
+            <label>Shortcut squares (square:steps forward)
+                <input type="text" name="shortcut_squares" value="{{ shortcut_string | default('') }}">
+            </label>
+            <label>Construction zones (square:steps backward)
+                <input type="text" name="construction_zones" value="{{ construction_string | default('') }}">
+            </label>
             <label>Max turns per episode
                 <input type="number" name="max_turns" min="50" value="{{ config.max_turns }}">
             </label>
@@ -41,6 +50,11 @@
                 <input type="checkbox" name="allow_odd_split" {% if config.allow_odd_split %}checked{% endif %}>
                 Allow odd dice rolls to be split between two pawns
             </label>
+            <label class="checkbox">
+                <input type="checkbox" name="enable_capture" {% if config.enable_capture %}checked{% endif %}>
+                Allow captures (landing on another pawn sends it back to base)
+            </label>
+            <p class="tip">Remember: you must roll a 6 to launch a pawn out of its base. Choose a board size that is divisible by the number of players so their starting squares stay evenly spaced.</p>
         </section>
 
         <section>
