@@ -22,6 +22,7 @@ class EvaluationStats:
     run: int
     total_reward: float
     turns: int
+    trace: List[StepInfo]
 
 
 @dataclass
@@ -120,6 +121,7 @@ def run_simulation(config: Dict) -> SimulationResult:
         done = False
         total_reward = 0.0
         turns = 0
+        eval_trace: List[StepInfo] = []
 
         while not done:
             options = eval_env.available_actions()
@@ -129,11 +131,12 @@ def run_simulation(config: Dict) -> SimulationResult:
             chosen_key = agent.select_action(state, action_keys, eval_env.rng)
             option_lookup = {option.key: option for option in options}
             selected_option = option_lookup[chosen_key]
-            next_state, reward, done, _ = eval_env.step(selected_option)
+            next_state, reward, done, info = eval_env.step(selected_option)
             total_reward += reward
             turns += 1
+            eval_trace.append(info)
             state = next_state
 
-        evaluation.append(EvaluationStats(run=run, total_reward=total_reward, turns=turns))
+        evaluation.append(EvaluationStats(run=run, total_reward=total_reward, turns=turns, trace=eval_trace))
 
     return SimulationResult(training_history=training_history, evaluation=evaluation)

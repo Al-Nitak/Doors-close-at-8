@@ -123,6 +123,35 @@ th, td {
     text-align: left;
 }
 
+.sortable-header {
+    position: relative;
+    padding-right: 1.5rem;
+}
+
+.sortable-header:hover {
+    background-color: #f0f2f8;
+}
+
+.sort-indicator {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.sortable-header:hover .sort-indicator {
+    color: #122851;
+}
+
+.sortable-header.sort-asc .sort-indicator,
+.sortable-header.sort-desc .sort-indicator {
+    color: #ff7a18;
+    font-weight: bold;
+}
+
 tr:nth-child(even) {
     background: #f9fbff;
 }
