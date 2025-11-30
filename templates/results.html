@@ -5,6 +5,7 @@
     <title>Simulation Results</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <header>
@@ -67,6 +68,36 @@
             <div>
                 <p>Avg eval turns</p>
                 <strong>{{ '%.1f'|format(result.avg_eval_turns) }}</strong>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Visualizations</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem; margin-top: 1.5rem;">
+            <div>
+                <h3>Turns Distribution (Training)</h3>
+                <canvas id="turnsChart"></canvas>
+            </div>
+            <div>
+                <h3>Action Type Distribution (Training)</h3>
+                <canvas id="actionsChart"></canvas>
+            </div>
+            <div>
+                <h3>Turns Over Episodes</h3>
+                <canvas id="turnsOverTimeChart"></canvas>
+            </div>
+            <div>
+                <h3>Reward Over Episodes</h3>
+                <canvas id="rewardOverTimeChart"></canvas>
+            </div>
+            <div>
+                <h3>Game Statistics (Training)</h3>
+                <canvas id="gameStatsChart"></canvas>
+            </div>
+            <div>
+                <h3>Evaluation Turns Distribution</h3>
+                <canvas id="evalTurnsChart"></canvas>
             </div>
         </div>
     </section>
@@ -447,6 +478,316 @@
 </main>
 
 <script>
+    // Prepare data for visualizations
+    const trainingData = {
+        turns: [{% for stat in training_history %}{{ stat.turns }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        rewards: [{% for stat in training_history %}{{ stat.total_reward }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        episodes: [{% for stat in training_history %}{{ stat.episode }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        actions: {
+            single: 0,
+            split: 0,
+            entry: 0,
+            pass: 0,
+            invalid: 0
+        },
+        gameStats: {
+            shortcuts: 0,
+            constructions: 0,
+            powerUps: 0,
+            captures: 0,
+            illegal: 0,
+            noLegalPlay: 0
+        }
+    };
+
+    const evalData = {
+        turns: [{% for stat in evaluation %}{{ stat.turns }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        rewards: [{% for stat in evaluation %}{{ stat.total_reward }}{% if not loop.last %}, {% endif %}{% endfor %}]
+    };
+
+    // Count actions and game stats from training history
+    {% for stat in training_history %}
+        {% for step in stat.trace %}
+            {% if step.action_key[0] == 'single' %}
+                trainingData.actions.single++;
+            {% elif step.action_key[0] == 'split' %}
+                trainingData.actions.split++;
+            {% elif step.action_key[0] == 'entry' %}
+                trainingData.actions.entry++;
+            {% elif step.action_key[0] == 'pass' %}
+                trainingData.actions.pass++;
+            {% elif step.action_key[0] == 'invalid' %}
+                trainingData.actions.invalid++;
+            {% endif %}
+            {% for event in step.special_square_events %}
+                {% if event.square_type == 'shortcut' %}
+                    trainingData.gameStats.shortcuts++;
+                {% elif event.square_type == 'construction' %}
+                    trainingData.gameStats.constructions++;
+                {% endif %}
+            {% endfor %}
+            {% if step.bonus_primary > 0 %}
+                trainingData.gameStats.powerUps++;
+            {% endif %}
+            {% if step.secondary is not none and step.bonus_secondary > 0 %}
+                trainingData.gameStats.powerUps++;
+            {% endif %}
+            trainingData.gameStats.captures += {{ step.captures|length }};
+            {% if step.action_key[0] == 'invalid' %}
+                trainingData.gameStats.illegal++;
+            {% elif step.action_key[0] == 'pass' %}
+                trainingData.gameStats.noLegalPlay++;
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
+    // Create turns distribution histogram
+    function createTurnsHistogram(data, canvasId, title) {
+        if (data.length === 0) return;
+        const bins = 20;
+        const minTurns = Math.min(...data);
+        const maxTurns = Math.max(...data);
+        const binSize = (maxTurns - minTurns) / bins || 1;
+        const histogram = new Array(bins).fill(0);
+        const labels = [];
+
+        data.forEach(turns => {
+            const binIndex = Math.min(Math.floor((turns - minTurns) / binSize), bins - 1);
+            histogram[binIndex]++;
+        });
+
+        for (let i = 0; i < bins; i++) {
+            labels.push(Math.round(minTurns + i * binSize) + '-' + Math.round(minTurns + (i + 1) * binSize));
+        }
+
+        return new Chart(document.getElementById(canvasId), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Number of Games',
+                    data: histogram,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: title
+                    },
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Frequency'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Turns Range'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Create action distribution chart
+    function createActionsChart() {
+        return new Chart(document.getElementById('actionsChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Single Move', 'Split Move', 'Entry', 'Pass', 'Invalid'],
+                datasets: [{
+                    data: [
+                        trainingData.actions.single,
+                        trainingData.actions.split,
+                        trainingData.actions.entry,
+                        trainingData.actions.pass,
+                        trainingData.actions.invalid
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Create turns over time chart
+    function createTurnsOverTimeChart() {
+        return new Chart(document.getElementById('turnsOverTimeChart'), {
+            type: 'line',
+            data: {
+                labels: trainingData.episodes,
+                datasets: [{
+                    label: 'Turns per Episode',
+                    data: trainingData.turns,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Turns'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Episode'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Create reward over time chart
+    function createRewardOverTimeChart() {
+        return new Chart(document.getElementById('rewardOverTimeChart'), {
+            type: 'line',
+            data: {
+                labels: trainingData.episodes,
+                datasets: [{
+                    label: 'Total Reward per Episode',
+                    data: trainingData.rewards,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Reward'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Episode'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Create game statistics chart
+    function createGameStatsChart() {
+        return new Chart(document.getElementById('gameStatsChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Shortcuts', 'Construction', 'Power Ups', 'Captures', 'Illegal', 'No Legal Play'],
+                datasets: [{
+                    label: 'Total Count',
+                    data: [
+                        trainingData.gameStats.shortcuts,
+                        trainingData.gameStats.constructions,
+                        trainingData.gameStats.powerUps,
+                        trainingData.gameStats.captures,
+                        trainingData.gameStats.illegal,
+                        trainingData.gameStats.noLegalPlay
+                    ],
+                    backgroundColor: [
+                        'rgba(46, 204, 113, 0.8)',
+                        'rgba(231, 76, 60, 0.8)',
+                        'rgba(243, 156, 18, 0.8)',
+                        'rgba(52, 152, 219, 0.8)',
+                        'rgba(149, 165, 166, 0.8)',
+                        'rgba(148, 163, 184, 0.8)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize all charts
+    document.addEventListener('DOMContentLoaded', function() {
+        if (trainingData.turns.length > 0) {
+            createTurnsHistogram(trainingData.turns, 'turnsChart', 'Distribution of Turns to Finish (Training)');
+            createActionsChart();
+            createTurnsOverTimeChart();
+            createRewardOverTimeChart();
+            createGameStatsChart();
+        }
+        if (evalData.turns.length > 0) {
+            createTurnsHistogram(evalData.turns, 'evalTurnsChart', 'Distribution of Turns to Finish (Evaluation)');
+        }
+    });
+
     // Table sorting functionality
     document.addEventListener('DOMContentLoaded', function() {
         const tables = document.querySelectorAll('.sortable');
